@@ -1,0 +1,11 @@
+venv/
+__pycache__/
+.env
+/vector_store
+.env
+.env.example
+checkpoints.sqlite
+checkpoints.sqlite-shm
+checkpoints.sqlite-wal
+documents_index.txt
+project_structure.txt

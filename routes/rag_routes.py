@@ -1,5 +1,9 @@
+import os
+from services.audio_preprocessing import preprocess_audio
+from services.stt_service import transcribe_audio
 from flask import (
     Blueprint,
+    current_app,
     request,
     jsonify
 )
@@ -81,17 +85,16 @@ def query():
         }), 200
     except Exception as exc:
 
-        import traceback
-
-        traceback.print_exc()
+        current_app.logger.exception(
+            "Error handling query: %s",
+            exc
+        )
 
         return jsonify({
 
-            "error": str(exc),
+            "error": "Internal server error.",
 
-            "error_type": type(exc).__name__,
-
-            "traceback": traceback.format_exc()
+            "error_type": type(exc).__name__
 
         }), 500
 # =========================================================
@@ -213,3 +216,98 @@ def ingest():
             "error":
                 str(exc)
         }), 500
+    # =========================================================
+# VOICE QUERY API
+# =========================================================
+
+@rag_bp.route(
+    "/voice-query",
+    methods=["POST"]
+)
+def voice_query():
+
+    if "file" not in request.files:
+        return jsonify({
+            "error": "Audio file is required."
+        }), 400
+
+    audio_file = request.files["file"]
+
+    if not audio_file or not audio_file.filename:
+        return jsonify({
+            "error": "Please upload an audio file."
+        }), 400
+
+    tenant_id = request.form.get("tenant_id")
+
+    if not tenant_id:
+        return jsonify({
+            "error": "Tenant ID is required."
+        }), 400
+
+    thread_id = request.form.get(
+        "thread_id",
+        "default"
+    )
+
+    processed_audio = None
+
+    try:
+
+        # 1. Preprocess audio
+        processed_audio = preprocess_audio(
+            audio_file
+        )
+
+        # 2. Speech-to-text
+        transcript = transcribe_audio(
+            processed_audio
+        )
+
+        # 3. Send transcript to existing RAG/LLM
+        result = ask_question(
+            question=transcript,
+            thread_id=thread_id,
+            tenant_id=tenant_id
+        )
+
+        return jsonify({
+
+            "status": "success",
+
+            "transcript": transcript,
+
+            "answer": result["answer"],
+
+            "sources": result["sources"],
+
+            "tenant_id": tenant_id,
+
+            "thread_id": thread_id
+
+        }), 200
+
+    except Exception as exc:
+
+        current_app.logger.exception(
+            "Error handling voice query: %s",
+            exc
+        )
+
+        return jsonify({
+
+            "error": "Internal server error.",
+
+            "error_type": type(exc).__name__
+
+        }), 500
+
+    finally:
+
+        # Delete temporary processed WAV
+        if processed_audio:
+
+            try:
+                os.remove(processed_audio)
+            except OSError:
+                pass

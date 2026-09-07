@@ -1,5 +1,6 @@
 from flask import (
     Blueprint,
+    current_app,
     request,
     jsonify
 )
@@ -103,17 +104,17 @@ def register_mcp_server():
 
     except Exception as exc:
 
-        import traceback
-
-        traceback.print_exc()
+        current_app.logger.exception(
+            "Unable to register MCP server: %s",
+            exc
+        )
 
         return jsonify({
             "status": "error",
             "message": "Unable to connect to MCP server.",
             "server_name": name,
             "url": url,
-            "error_type": type(exc).__name__,
-            "error": str(exc)
+            "error_type": type(exc).__name__
         }), 502
 # =========================================================
 # LIST MCP SERVERS

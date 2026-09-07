@@ -1,41 +1,76 @@
-from flask import Flask
+import logging
+import os
 
-from routes.rag_routes import rag_bp
+from flask import Flask, jsonify, request
+
 from routes.mcp_routes import mcp_bp
-
-
-app = Flask(__name__)
+from routes.rag_routes import rag_bp
 
 
 # =========================================================
-# EXISTING RAG ROUTES
+# LOGGING
 # =========================================================
 
-app.register_blueprint(
-    rag_bp
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s %(name)s %(message)s",
 )
 
-
-# =========================================================
-# MCP ROUTES
-# =========================================================
-
-app.register_blueprint(
-    mcp_bp
-)
+logger = logging.getLogger(__name__)
 
 
 # =========================================================
-# HOME
+# APP FACTORY
 # =========================================================
 
-@app.route("/")
-def home():
+def create_app():
+    app = Flask(__name__)
+    app.config["API_KEY"] = os.getenv("API_KEY")
 
-    return {
-        "message": "Welcome to Student Assistant RAG API",
-        "version": "1.0"
-    }
+    # -------------------------------------------------
+    # SECURITY: optional API key auth
+    # (disabled when API_KEY is not set in the environment)
+    # -------------------------------------------------
+
+    @app.before_request
+    def require_api_key():
+        # Allow CORS preflight requests
+        if request.method == "OPTIONS":
+            return None
+        # Public endpoints
+        if request.path in ("/", "/health"):
+            return None
+        # Auth is disabled unless an API key is configured
+        api_key = app.config.get("API_KEY")
+        if not api_key:
+            return None
+        provided = request.headers.get("X-API-Key")
+        if provided != api_key:
+            return jsonify({
+                "status": "error",
+                "message": "Unauthorized. Missing or invalid X-API-Key header.",
+            }), 401
+
+    # -------------------------------------------------
+    # BLUEPRINTS
+    # -------------------------------------------------
+    app.register_blueprint(rag_bp)
+    app.register_blueprint(mcp_bp)
+
+    # -------------------------------------------------
+    # HOME
+    # -------------------------------------------------
+    @app.route("/")
+    def home():
+        return {
+            "message": "Welcome to Student Assistant RAG API",
+            "version": "1.0",
+        }
+
+    return app
+
+
+app = create_app()
 
 
 # =========================================================
@@ -43,9 +78,9 @@ def home():
 # =========================================================
 
 if __name__ == "__main__":
-
+    debug = os.getenv("FLASK_DEBUG", "false").lower() == "true"
     app.run(
         host="0.0.0.0",
         port=5000,
-        debug=True
+        debug=debug,
     )

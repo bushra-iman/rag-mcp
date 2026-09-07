@@ -106,7 +106,7 @@ class MCPClientManager:
                 f"MCP server '{server_id}' is not registered."
             )
         return server
-    
+
         # =====================================================
     # AUTHENTICATION HEADERS
     # =====================================================

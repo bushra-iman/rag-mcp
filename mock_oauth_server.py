@@ -1,6 +1,5 @@
 from flask import Flask, request, jsonify
 import secrets
-import time
 
 
 app = Flask(__name__)

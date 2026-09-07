@@ -3,6 +3,7 @@ import os
 
 from flask import Flask, jsonify, request
 
+from config import Config
 from routes.mcp_routes import mcp_bp
 from routes.rag_routes import rag_bp
 
@@ -80,7 +81,7 @@ app = create_app()
 if __name__ == "__main__":
     debug = os.getenv("FLASK_DEBUG", "false").lower() == "true"
     app.run(
-        host="0.0.0.0",
-        port=5000,
+        host=Config.HOST,
+        port=Config.PORT,
         debug=debug,
     )

@@ -78,28 +78,50 @@ Then edit `.env` and set:
 | `OPENAI_API_KEY` | Your OpenAI API key (required for RAG + speech-to-text) |
 | `API_KEY` | Optional. If set, every endpoint except `/` and `/health` requires the `X-API-Key` header |
 | `VECTOR_DB_PATH` | Path to the FAISS vector store (default `vector_store`) |
+| `PORT` | RAG API port (default `5000`) |
+| `MCP_PORT` | Standalone MCP server port (default `8000`) |
+| `OAUTH_PORT` | Mock OAuth server port (default `7000`) |
 
-### 3. Run the API
+> 💡 If port `5000` is already in use on your machine (e.g. another Flask app),
+> change `PORT=5001` in `.env` and use `http://localhost:5001` in Postman.
+
+### 3. Run everything (Windows / one click)
+
+Double-click **`run_all.bat`** — it opens three windows:
+
+| Window | Server | URL |
+|---|---|---|
+| RAG API | Flask app | `http://localhost:5000` |
+| MCP Server | FastMCP (streamable HTTP) | `http://localhost:8000/mcp` |
+| Mock OAuth | fake token endpoint | `http://localhost:7000` |
+
+Or run each manually in separate terminals:
 
 ```bash
-python app.py
+python app.py               # RAG API
+python mcp_server.py        # MCP server
+python mock_oauth_server.py # Mock OAuth
 ```
 
-The API will be available at `http://localhost:5000`.
-
-### 4. Smoke test
+To stop everything:
 
 ```bash
-curl http://localhost:5000/health
+stop_all.bat
 ```
 
-### 5. (Optional) Run the MCP server
+### 4. Verify everything is up
 
 ```bash
-python mcp_server.py
+venv\Scripts\python smoke_test.py
 ```
 
-Exposes `search_uploaded_documents` and `search_web` as MCP tools at `http://localhost:8000/mcp`.
+You should see `[PASS]` for all checks. Now open **Postman** and test!
+
+### 5. Per-server endpoints (for Postman)
+
+- **RAG API**: `http://localhost:5000` → `/`, `/health`, `/query`, `/ingest`, `/voice-query`, `/threads`, `/top5`, `/api/mcp/*`
+- **MCP server**: `http://localhost:8000/mcp` → JSON-RPC over streamable HTTP
+- **Mock OAuth**: `http://localhost:7000` → `/oauth/token` (POST `grant_type=client_credentials&client_id=1234&client_secret=client-secret`)
 
 ---
 

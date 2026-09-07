@@ -3,8 +3,12 @@ import asyncio
 from mcp import ClientSession
 from mcp.client.streamable_http import streamable_http_client
 
+from config import Config
 
-MCP_SERVER_URL = "http://127.0.0.1:8000/mcp"
+
+MCP_SERVER_URL = (
+    f"http://127.0.0.1:{Config.MCP_PORT}/mcp"
+)
 
 
 async def test_mcp_server():
@@ -14,10 +18,11 @@ async def test_mcp_server():
 
     async with streamable_http_client(
         MCP_SERVER_URL
-    ) as (
-        read_stream,
-        write_stream
-    ):
+    ) as streams:
+
+        # SDK yields (read_stream, write_stream, get_session_id_callback)
+        read_stream = streams[0]
+        write_stream = streams[1]
 
         async with ClientSession(
             read_stream,

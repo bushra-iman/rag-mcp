@@ -1,6 +1,8 @@
 from flask import Flask, request, jsonify
 import secrets
 
+from config import Config
+
 
 app = Flask(__name__)
 
@@ -114,7 +116,7 @@ def health():
 if __name__ == "__main__":
 
     app.run(
-        host="127.0.0.1",
-        port=7000,
+        host=Config.OAUTH_HOST,
+        port=Config.OAUTH_PORT,
         debug=True
     )

@@ -3,6 +3,7 @@ from typing import Annotated
 from mcp.server.fastmcp import FastMCP
 from mcp.server.transport_security import TransportSecuritySettings
 
+from config import Config
 from services.rag_engine import (
     search_knowledge_base,
     search_web_tool
@@ -11,12 +12,13 @@ from services.rag_engine import (
 
 # =========================================================
 # MCP SERVER
+# (host/port configurable via MCP_HOST / MCP_PORT in .env)
 # =========================================================
 
 mcp = FastMCP(
     "Student Assistant MCP",
-    host="0.0.0.0",
-    port=8000,
+    host=Config.MCP_HOST,
+    port=Config.MCP_PORT,
     transport_security=TransportSecuritySettings(
         enable_dns_rebinding_protection=False,
     ),
